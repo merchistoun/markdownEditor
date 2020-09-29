@@ -1,74 +1,106 @@
-import React from "react";
-import uniqid from "uniqid";
-import Buttons from "./Buttons";
-import Editor from "./Editor";
-import Viewer from "./Viewer";
+import React from 'react';
+import uniqid from 'uniqid';
+import Buttons from './Buttons';
+import Editor from './Editor';
+import Viewer from './Viewer';
+import Dialog from './Dialog';
+import { INIT } from './init';
 
 export default () => {
-  const [sections, setSections] = React.useState([]);
-  const [index, setIndex] = React.useState(0);
+    const buttons = [{ text: 'OK', action: () => setIsDialogOpen(false) }];
 
-  React.useEffect(() => {
-    setSections((prev) => [...prev, newSection()]);
-  }, []);
+    const newSection = () => ({
+        id: uniqid(),
+        markdown: '',
+        style: {}
+    });
 
-  const newSection = () => ({ id: uniqid(), markdown: "### H1", styles: "" });
+    const [sections, setSections] = React.useState(INIT);
+    const [index, setIndex] = React.useState(0);
+    const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
-  const addSection = () => {
-    const maxIndex = sections.length;
-    setSections((prev) => [...prev, newSection()]);
-    setIndex(() => maxIndex);
-  };
+    const addSection = () => {
+        const maxIndex = sections.length;
+        setSections((prev) => [...prev, newSection()]);
+        setIndex(() => maxIndex);
+    };
 
-  const deleteSection = () => {};
+    const deleteSection = () => {
+        setSections((prev) => prev.filter((_, idx) => idx !== index));
+        setIndex((prev) => Math.max(0, prev - 1));
+    };
 
-  const copyToClipboard = () => {};
+    const onUp = (idx) => {
+        const copy = [...sections];
+        const temp = copy[idx - 1];
+        copy[idx - 1] = copy[idx];
+        copy[idx] = temp;
+        setIndex(idx - 1);
+        setSections(copy);
+    };
 
-  const onMarkdownChanged = (value) => {
-    setSections((prev) =>
-      prev.map((section, idx) => {
-        return idx !== index ? section : { ...section, markdown: value };
-      })
+    const onDown = (idx) => {
+        const copy = [...sections];
+        const temp = copy[idx + 1];
+        copy[idx + 1] = copy[idx];
+        copy[idx] = temp;
+        setIndex(idx + 1);
+        setSections(copy);
+    };
+
+    const copyToClipboard = () => {
+        var textArea = document.createElement('textarea');
+        textArea.value = JSON.stringify(sections);
+        textArea.style.top = '0';
+        textArea.style.left = '0';
+        textArea.style.position = 'fixed';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+            document.execCommand('copy');
+            setIsDialogOpen(true);
+        } catch (err) {
+            console.log(sections);
+        }
+        document.body.removeChild(textArea);
+    };
+
+    const onMarkdownChanged = (value) => {
+        setSections((prev) =>
+            prev.map((section, idx) => {
+                return idx !== index ? section : { ...section, markdown: value };
+            })
+        );
+    };
+
+    const onStyleChanged = (value) => {
+        setSections((prev) =>
+            prev.map((section, idx) => {
+                return idx !== index ? section : { ...section, style: value };
+            })
+        );
+    };
+
+    return (
+        <>
+            <Buttons
+                addSection={addSection}
+                deleteSection={deleteSection}
+                canDeleteSection={sections.length > 1}
+                sections={sections}
+                index={index}
+                onUp={onUp}
+                onDown={onDown}
+                copyToClipboard={copyToClipboard}
+            />
+
+            <Editor section={sections[index]} onMarkdownChanged={onMarkdownChanged} onStyleChanged={onStyleChanged} />
+
+            <Viewer sections={sections} index={index} setIndex={setIndex} />
+
+            <Dialog title="Copied to Clipboard" buttons={buttons} onCancel={buttons[0].action} isOpen={isDialogOpen} />
+        </>
     );
-  };
-
-  const onStyleChanged = (value) => {
-    console.log("onMarkdownChanged", value);
-    setSections((prev) =>
-      prev.map((section, idx) => {
-        return idx !== index ? section : { ...section, style: value };
-      })
-    );
-  };
-
-  const onSetIndex = (value) => {
-    console.log(value);
-    setIndex(value);
-  };
-
-  const mainStyle = {
-    root: {
-      buttons: {},
-      editor: {},
-      viewer: {}
-    }
-  };
-
-  return (
-    <div style={mainStyle.root}>
-      <div style={mainStyle.root.buttons}>
-        <Buttons addSection={addSection} />
-      </div>
-      <div style={mainStyle.root.editor}>
-        <Editor
-          section={sections[index]}
-          onMarkdownChanged={onMarkdownChanged}
-          onStyleChanged={onStyleChanged}
-        />
-      </div>
-      <div style={mainStyle.root.viewer}>
-        <Viewer sections={sections} index={index} setIndex={onSetIndex} />
-      </div>
-    </div>
-  );
 };
