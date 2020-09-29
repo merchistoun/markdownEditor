@@ -41,9 +41,9 @@ export default (props) => {
         <div style={style.root}>
             {sections?.length
                 ? sections.map((section, idx) => {
-                  console.log(section);
-                      const source = section.markdown.replace('{{api}}', apiValue);
-                      const style = JSON.parse(JSON.stringify(section.style).replace('{{api}}', apiValue));
+                      console.log(section);
+                      const source = section.markdown.replaceAll('{{api}}', apiValue);
+                      const style = section.style.length ? JSON.parse(section.style.replaceAll('{{api}}', apiValue)) : '';
 
                       return (
                           <div

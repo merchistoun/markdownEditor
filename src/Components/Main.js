@@ -13,7 +13,7 @@ export default () => {
     const newSection = () => ({
         id: uniqid(),
         markdown: '',
-        style: {}
+        style: ''
     });
 
     const [sections, setSections] = React.useState(INIT);

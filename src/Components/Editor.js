@@ -18,6 +18,9 @@ const style = {
 let markdownTimer = null;
 let styleTimer = null;
 
+const markdownSaveTimeout = 1000;
+const styleSaveTimeout = 2000;
+
 export default (props) => {
     const { section, onMarkdownChanged, onStyleChanged } = props;
 
@@ -26,7 +29,7 @@ export default (props) => {
     const [isStyleError, setIsStyleError] = React.useState(false);
 
     React.useEffect(() => {
-        setStyleText(JSON.stringify(section.style, null, '\t'));
+        setStyleText(section.style);
     }, [section.style]);
 
     React.useEffect(() => {
@@ -38,7 +41,7 @@ export default (props) => {
         setMarkdownText(value);
         markdownTimer = setTimeout(() => {
           onMarkdownChanged(value);
-        }, 1000);
+        }, markdownSaveTimeout);
     };
 
     const onStyleTextChanged = (value) => {
@@ -47,12 +50,18 @@ export default (props) => {
         styleTimer = setTimeout(() => {
             try {
                 const style = JSON.parse(value);
-                onStyleChanged(style);
-                setIsStyleError(false);
+                if (typeof style === 'object') {
+                    const formattedStyle = JSON.stringify(style, null, '\t')
+                    onStyleChanged(formattedStyle);
+                    setIsStyleError(false);
+                }
+                else {
+                    setIsStyleError(true);
+                }
             } catch {
                 setIsStyleError(true);
             }
-        }, 3000);
+        }, styleSaveTimeout);
     };
 
     return (
