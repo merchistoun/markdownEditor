@@ -1,5 +1,6 @@
 import React from 'react';
 import uniqid from 'uniqid';
+import ApiSelector from './ApiSelector';
 import Buttons from './Buttons';
 import Editor from './Editor';
 import Viewer from './Viewer';
@@ -18,6 +19,7 @@ export default () => {
     const [sections, setSections] = React.useState(INIT);
     const [index, setIndex] = React.useState(0);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+    const [apiValue, setApiValue] = React.useState('https://localhost:44351/api');
 
     const addSection = () => {
         const maxIndex = sections.length;
@@ -85,6 +87,8 @@ export default () => {
 
     return (
         <>
+            <ApiSelector value={apiValue} setValue={setApiValue} />
+
             <Buttons
                 addSection={addSection}
                 deleteSection={deleteSection}
@@ -98,7 +102,7 @@ export default () => {
 
             <Editor section={sections[index]} onMarkdownChanged={onMarkdownChanged} onStyleChanged={onStyleChanged} />
 
-            <Viewer sections={sections} index={index} setIndex={setIndex} />
+            <Viewer sections={sections} apiValue={apiValue} index={index} setIndex={setIndex} />
 
             <Dialog title="Copied to Clipboard" buttons={buttons} onCancel={buttons[0].action} isOpen={isDialogOpen} />
         </>

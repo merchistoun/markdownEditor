@@ -24,7 +24,7 @@ const getStyle = (isActive) => {
 };
 
 export default (props) => {
-    const { sections, index, setIndex } = props;
+    const { sections, apiValue, index, setIndex } = props;
     const selectedId = sections && sections[index] && sections[index].id;
 
     const StyledMarkdown = ({ style, source }) => {
@@ -41,13 +41,17 @@ export default (props) => {
         <div style={style.root}>
             {sections?.length
                 ? sections.map((section, idx) => {
+                  console.log(section);
+                      const source = section.markdown.replace('{{api}}', apiValue);
+                      const style = JSON.parse(JSON.stringify(section.style).replace('{{api}}', apiValue));
+
                       return (
                           <div
                               key={section.id}
                               style={getStyle(section.id === selectedId)}
                               onClick={() => setIndex(idx)}
                           >
-                              <StyledMarkdown style={section.style} source={section.markdown} />
+                              <StyledMarkdown style={style} source={source} />
                           </div>
                       );
                   })
