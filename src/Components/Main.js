@@ -1,11 +1,18 @@
 import React from 'react';
 import uniqid from 'uniqid';
+import { getSites, getInduction } from '../api';
+
 import ApiSelector from './ApiSelector';
 import Buttons from './Buttons';
 import Editor from './Editor';
 import Viewer from './Viewer';
 import Dialog from './Dialog';
-import { INIT } from './init';
+
+const style = {
+    root: {
+        background: 'linear-gradient(0deg, rgba(240,240,240,1) 0%, rgba(255,255,255,1) 100%)'
+    }
+};
 
 export default () => {
     const buttons = [{ text: 'OK', action: () => setIsDialogOpen(false) }];
@@ -16,10 +23,26 @@ export default () => {
         style: ''
     });
 
-    const [sections, setSections] = React.useState(INIT);
+    const [sites, setSites] = React.useState([]);
+    const [selectedSite, setSelectedSite] = React.useState([]);
+
+    const [sections, setSections] = React.useState([newSection()]);
     const [index, setIndex] = React.useState(0);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-    const [apiValue, setApiValue] = React.useState('https://localhost:44351/api');
+
+    const [baseUrl, setBaseUrl] = React.useState(process.env.REACT_APP_API_PUBLIC);
+    const [resourceRef, setResourceRef] = React.useState('AngloAmericanBrisbane');
+    const [apiValue, setApiValue] = React.useState('');
+
+    React.useEffect(() => {
+        // get sites
+        const sites = getSites();
+    }, []);
+
+    React.useEffect(() => {
+        // set API for resources
+        setApiValue(`${baseUrl}/Resource/${resourceRef}`);
+    }, [baseUrl, resourceRef]);
 
     const addSection = () => {
         const maxIndex = sections.length;
@@ -87,20 +110,31 @@ export default () => {
 
     return (
         <>
-            <ApiSelector value={apiValue} setValue={setApiValue} />
+            <div style={style.root}>
+                <ApiSelector
+                    baseUrl={baseUrl}
+                    setBaseUrl={setBaseUrl}
+                    resourceRef={resourceRef}
+                    setResourceRef={setResourceRef}
+                />
 
-            <Buttons
-                addSection={addSection}
-                deleteSection={deleteSection}
-                canDeleteSection={sections.length > 1}
-                sections={sections}
-                index={index}
-                onUp={onUp}
-                onDown={onDown}
-                copyToClipboard={copyToClipboard}
-            />
+                <Buttons
+                    addSection={addSection}
+                    deleteSection={deleteSection}
+                    canDeleteSection={sections.length > 1}
+                    sections={sections}
+                    index={index}
+                    onUp={onUp}
+                    onDown={onDown}
+                    copyToClipboard={copyToClipboard}
+                />
 
-            <Editor section={sections[index]} onMarkdownChanged={onMarkdownChanged} onStyleChanged={onStyleChanged} />
+                <Editor
+                    section={sections[index]}
+                    onMarkdownChanged={onMarkdownChanged}
+                    onStyleChanged={onStyleChanged}
+                />
+            </div>
 
             <Viewer sections={sections} apiValue={apiValue} index={index} setIndex={setIndex} />
 
