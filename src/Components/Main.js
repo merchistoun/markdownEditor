@@ -1,6 +1,6 @@
 import React from 'react';
 import uniqid from 'uniqid';
-import { getSites, getInduction } from '../api';
+import { getSites, getInductionForSite, createInduction, updateInduction } from '../api';
 
 import ApiSelector from './ApiSelector';
 import Buttons from './Buttons';
@@ -24,24 +24,37 @@ export default () => {
     });
 
     const [sites, setSites] = React.useState([]);
-    const [selectedSite, setSelectedSite] = React.useState([]);
+    const [selectedSiteId, setSelectedSiteId] = React.useState('');
+    const [isSaveNew, setIsSaveNew] = React.useState(false);
 
+    const [induction, setInduction] = React.useState(null);
     const [sections, setSections] = React.useState([newSection()]);
+
     const [index, setIndex] = React.useState(0);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
     const [baseUrl, setBaseUrl] = React.useState(process.env.REACT_APP_API_PUBLIC);
-    const [resourceRef, setResourceRef] = React.useState('AngloAmericanBrisbane');
+    const [resourceRef, setResourceRef] = React.useState('');
     const [apiValue, setApiValue] = React.useState('');
 
     React.useEffect(() => {
-        // get sites
-        const sites = getSites();
+        getSites().then((sites) => setSites(sites));
     }, []);
 
+    const onSiteChanged = (e) => {
+        const siteId = e.target.value;
+        setSelectedSiteId(siteId);
+        setResourceRef(sites.find((site) => site.id === siteId).resourceReference);
+        setSections([newSection()]);
+
+        getInductionForSite(siteId).then((induction) => {
+            setInduction(induction);
+            setSections(JSON.parse(induction.content));
+        });
+    };
+
     React.useEffect(() => {
-        // set API for resources
-        setApiValue(`${baseUrl}/Resource/${resourceRef}`);
+        setApiValue(`${baseUrl}/api/Resource/${resourceRef}`);
     }, [baseUrl, resourceRef]);
 
     const addSection = () => {
@@ -108,6 +121,23 @@ export default () => {
         );
     };
 
+    const onIsSaveNewChanged = () => {
+        setIsSaveNew((prev) => !prev);
+    };
+
+    const onSaveInduction = () => {
+        const payload = { ...induction, content: JSON.stringify(sections) };
+
+        if (isSaveNew) {
+            createInduction(payload).then((id) => {
+                setInduction({ ...induction, ...id });
+                setIsSaveNew(false);
+            });
+        } else {
+            updateInduction(payload);
+        }
+    };
+
     return (
         <>
             <div style={style.root}>
@@ -116,27 +146,37 @@ export default () => {
                     setBaseUrl={setBaseUrl}
                     resourceRef={resourceRef}
                     setResourceRef={setResourceRef}
+                    sites={sites}
+                    selectedSiteId={selectedSiteId}
+                    onSiteChanged={onSiteChanged}
                 />
 
-                <Buttons
-                    addSection={addSection}
-                    deleteSection={deleteSection}
-                    canDeleteSection={sections.length > 1}
-                    sections={sections}
-                    index={index}
-                    onUp={onUp}
-                    onDown={onDown}
-                    copyToClipboard={copyToClipboard}
-                />
+                {selectedSiteId && (
+                    <>
+                        <Buttons
+                            addSection={addSection}
+                            deleteSection={deleteSection}
+                            canDeleteSection={sections.length > 1}
+                            sections={sections}
+                            index={index}
+                            onUp={onUp}
+                            onDown={onDown}
+                            copyToClipboard={copyToClipboard}
+                            isSaveNew={isSaveNew}
+                            onIsSaveNewChanged={onIsSaveNewChanged}
+                            saveInduction={onSaveInduction}
+                        />
 
-                <Editor
-                    section={sections[index]}
-                    onMarkdownChanged={onMarkdownChanged}
-                    onStyleChanged={onStyleChanged}
-                />
+                        <Editor
+                            section={sections[index]}
+                            onMarkdownChanged={onMarkdownChanged}
+                            onStyleChanged={onStyleChanged}
+                        />
+                    </>
+                )}
             </div>
 
-            <Viewer sections={sections} apiValue={apiValue} index={index} setIndex={setIndex} />
+            {selectedSiteId && <Viewer sections={sections} apiValue={apiValue} index={index} setIndex={setIndex} />}
 
             <Dialog title="Copied to Clipboard" buttons={buttons} onCancel={buttons[0].action} isOpen={isDialogOpen} />
         </>

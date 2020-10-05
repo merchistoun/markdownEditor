@@ -15,11 +15,15 @@ export const post = (url, content, errorMessage = 'POST error - no description a
         .then((response) => processJsonResponse(response, errorMessage));
 };
 
-const getHeader = () => ({
-    headers: {}
-});
+export const putNoResponse = (url, content, errorMessage = 'PUT error - no description available') => {
+    return window.fetch(base + url, putHeader(content)).then((response) => checkStatus(response, errorMessage));
+};
+
+const getHeader = () => ({ headers: {} });
 
 const postHeader = (content) => contentHeader('POST', content);
+
+const putHeader = (content) => contentHeader('PUT', content);
 
 const contentHeader = (method, content) => ({
     method,
@@ -57,4 +61,10 @@ const processJsonResponse = (response, errorMessage) => {
         }
         return json;
     });
+};
+
+const checkStatus = (response, errorMessage) => {
+    if (!response.ok) {
+        throw buildErrorResponse({}, errorMessage);
+    }
 };
